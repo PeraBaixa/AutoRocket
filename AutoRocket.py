@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import random
 
-ARQ = "Estoque.txt" #Nome do documento do banco de dados
+ARQ = "estoque.txt" #Nome do documento do banco de dados
 
 class Veiculo(ABC):
     codigo = ""
