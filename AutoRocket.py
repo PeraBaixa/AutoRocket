@@ -1,211 +1,491 @@
 from abc import ABC, abstractmethod
 import random
+import os
+import json
+from datetime import datetime
 
-ARQ = "estoque.txt" #Nome do documento do banco de dados
+
+MARCAS_CARRO = [
+    "Chevrolet", "Fiat", "Volkswagen", "Ford", "Toyota",
+    "Honda", "Hyundai", "Renault", "Jeep", "Nissan",
+    "Peugeot", "Citroën", "BMW", "Mercedes-Benz", "Audi"
+]
+
+MARCAS_MOTO = [
+    "Honda", "Yamaha", "Suzuki", "Kawasaki", "BMW",
+    "Triumph", "Ducati", "Harley-Davidson", "Royal Enfield", "Dafra"
+]
+
+MARCAS_CAMINHAO = [
+    "Mercedes-Benz", "Scania", "Volvo", "DAF", "MAN",
+    "Iveco", "Ford", "Volkswagen", "Randon", "Cargo"
+]
+
+CORES = [
+    "Branca", "Prata", "Preta", "Cinza", "Azul",
+    "Vermelha", "Verde", "Bege", "Amarela", "Laranja", "Marrom", "Vinho"
+]
+
+ANOS = [str(ano) for ano in range(2025, 1994, -1)]
+
+def digitar_quilometragem():
+    while True:
+        separador("Quilometragem")
+        print("  Digite a quilometragem exata do veículo.")
+        print("  (Apenas números, sem pontos ou vírgulas. Ex: 45320)")
+        print()
+        entrada = input("  Quilometragem (km): ").strip()
+        try:
+            km = int(entrada)
+            if km < 0:
+                print("  ⚠  A quilometragem não pode ser negativa.")
+            else:
+                return f"{km:,.0f} km".replace(",", ".")
+        except ValueError:
+            print("  ⚠  Digite apenas números inteiros. Ex: 45320")
+
+
+def digitar_valor():
+    while True:
+        separador("Valor do Veículo")
+        print("  Digite o valor exato de venda.")
+        print("  (Use ponto para centavos se necessário. Ex: 45000 ou 45000.50)")
+        print()
+        entrada = input("  Valor (R$): ").strip()
+        entrada = entrada.replace("R$", "").replace(" ", "").replace(",", ".")
+        try:
+            valor = float(entrada)
+            if valor <= 0:
+                print("  ⚠  O valor deve ser maior que zero.")
+            else:
+                valor_fmt = f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+                return f"R$ {valor_fmt}"
+        except ValueError:
+            print("  ⚠  Valor inválido. Use apenas números. Ex: 45000 ou 45000.50")
+
+
+OPCIONAIS_CARRO = [
+    "Ar-condicionado",
+    "Vidros elétricos",
+    "Travas elétricas",
+    "Direção hidráulica",
+    "Direção elétrica",
+    "Multimídia",
+    "Câmera de ré",
+    "Sensor de estacionamento",
+    "Airbag",
+    "ABS",
+    "Teto solar",
+    "Rodas de liga leve",
+    "Bancos de couro",
+    "Alarme",
+    "Chave presencial",
+    "Controle de cruzeiro"
+]
+
+MOTORES = ["1.0", "1.3", "1.4", "1.6", "1.8", "2.0", "2.5", "3.0", "Elétrico"]
+
+TIPOS_MOTO = ["Naked", "Sport", "Scooter", "Trail", "Custom", "Touring", "Off-road"]
+
+TIPOS_CAMINHAO = ["Leve", "Médio", "Semipesado", "Pesado", "Extrapesado"]
+
+VENDEDORES = ["Carlos Andrade", "Fernanda Lima", "Ricardo Souza", "Patrícia Mendes"]
+
+
+estoque = []
+vendas  = []
+
+
+def limpar_tela():
+    """Limpa o terminal para deixar a interface mais limpa."""
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+
+def separador(titulo=""):
+    """Imprime uma linha separadora com título opcional."""
+    print()
+    if titulo:
+        print(f"{'─' * 10} {titulo.upper()} {'─' * 10}")
+    else:
+        print("─" * 40)
+
+
+def pausar():
+    """Pausa a execução até o usuário pressionar Enter."""
+    print()
+    input("  Pressione Enter para continuar...")
+
+
+def selecionar(titulo, opcoes, permite_multiplo=False):
+
+    while True:
+        separador(titulo)
+        for i, opcao in enumerate(opcoes, start=1):
+            print(f"  {i:2}. {opcao}")
+        print()
+
+        if permite_multiplo:
+            entrada = input("  Digite os números separados por vírgula (ex: 1,3,5): ").strip()
+            if not entrada:
+                return []  # nenhum opcional selecionado é válido
+            try:
+                indices = [int(x.strip()) for x in entrada.split(",")]
+                # Verifica se todos os índices são válidos
+                if all(1 <= idx <= len(opcoes) for idx in indices):
+                    return [opcoes[idx - 1] for idx in indices]
+                else:
+                    print("  ⚠  Número inválido. Tente novamente.")
+            except ValueError:
+                print("  ⚠  Digite apenas números separados por vírgula.")
+        else:
+            entrada = input("  Escolha uma opção: ").strip()
+            try:
+                idx = int(entrada)
+                if 1 <= idx <= len(opcoes):
+                    return opcoes[idx - 1]
+                else:
+                    print(f"  ⚠  Digite um número entre 1 e {len(opcoes)}.")
+            except ValueError:
+                print("  ⚠  Digite apenas o número da opção.")
+
+
+def gerar_codigo():
+    """Gera um código numérico aleatório de 4 dígitos para o veículo."""
+    return random.randint(1000, 9999)
 
 class Veiculo(ABC):
-    codigo = ""
-    modelo = ""
-    marca = ""
-    ano = ""
-    cor = ""
-    quilo = 0 #quilometragem
-    valor = 0.0
 
-    """
+    def __init__(self):
+        self.codigo      = gerar_codigo()
+        self.modelo      = ""
+        self.marca       = ""
+        self.ano         = ""
+        self.cor         = ""
+        self.quilometros = ""
+        self.valor       = ""
+        self.vendido     = False  # controla se o veículo está disponível
+
     @abstractmethod
-    def cadastrar():
+    def tipo(self):
+        """Cada subclasse deve retornar seu tipo como string."""
         pass
-    
+
     @abstractmethod
-    def consultar():
-        pass"""
+    def detalhes(self):
+        """Cada subclasse retorna uma string com seus detalhes específicos."""
+        pass
+
+    def resumo(self):
+        """Retorna as informações comuns a todos os veículos."""
+        status = "VENDIDO" if self.vendido else "Disponível"
+        return (
+            f"  Código      : #{self.codigo}\n"
+            f"  Tipo        : {self.tipo()}\n"
+            f"  Marca       : {self.marca}\n"
+            f"  Modelo      : {self.modelo}\n"
+            f"  Ano         : {self.ano}\n"
+            f"  Cor         : {self.cor}\n"
+            f"  Quilometros : {self.quilometros}\n"
+            f"  Valor       : {self.valor}\n"
+            f"  Status      : {status}"
+        )
+
+    def to_dict(self):
+        """Converte o veículo para dicionário (para salvar em arquivo)."""
+        return {
+            "codigo":      self.codigo,
+            "tipo_classe": self.tipo(),
+            "modelo":      self.modelo,
+            "marca":       self.marca,
+            "ano":         self.ano,
+            "cor":         self.cor,
+            "quilometros": self.quilometros,
+            "valor":       self.valor,
+            "vendido":     self.vendido,
+        }
+
 
 class Carro(Veiculo):
-    opcionais = ""
-    portas = ""
-    arCondicionado = True
-    motor = ""
+    """Herda de Veiculo e adiciona atributos exclusivos de carros."""
 
-    def __init__(obj):
-        obj.codigo = random.randint(1000, 9999)
+    def __init__(self):
+        super().__init__()
+        self.portas    = ""
+        self.motor     = ""
+        self.opcionais = []
 
-    def __str__(obj):
-        info = ""
-        info += ("- Veículo: " + obj.codigo + " - carro\n")
-        info += ("\t- Marca: " + obj.marca + "\n")
-        info += ("\t- Modelo: " + obj.modelo + "\n")
-        info += ("\t- Ano: " + obj.ano + "\n")
-        info += ("\t- Cor: " + obj.cor + "\n")
-        info += ("\t- Quilometragem: " + obj.quilo + "\n")
-        info += ("\t- Valor: " + obj.valor + "\n")
-        info += ("\t- Opcionais: " + obj.opcionais + "\n")
-        info += ("\t- Portas: " + obj.portas + "\n")
-        info += ("\t- Ar-condicionado: " + obj.arCondicionado + "\n")
-        info += ("\t- Motor: " + obj.motor + "\n")
-        return info
+    def tipo(self):
+        return "Carro"
 
-class Caminhao(Veiculo):
-    eixos = 0
-    tipo = ""
-    
-    def __init__(obj):
-        obj.codigo = random.randint(1000, 9999)
+    def detalhes(self):
+        op = ", ".join(self.opcionais) if self.opcionais else "Nenhum"
+        return (
+            f"  Portas      : {self.portas}\n"
+            f"  Motor       : {self.motor}\n"
+            f"  Opcionais   : {op}"
+        )
 
-    def __str__(obj):
-        info = ""
-        info += ("- Veículo: " + obj.codigo + " - caminhão\n")
-        info += ("\t- Marca: " + obj.marca + "\n")
-        info += ("\t- Modelo: " + obj.modelo + "\n")
-        info += ("\t- Ano: " + obj.ano + "\n")
-        info += ("\t- Cor: " + obj.cor + "\n")
-        info += ("\t- Quilometragem: " + obj.quilo + "\n")
-        info += ("\t- Valor: " + obj.valor + "\n")
-        info += ("\t- Eixos: " + obj.eixos + "\n")
-        info += ("\t- Tipo: " + obj.tipo + "\n")
-        return info
+    def to_dict(self):
+        d = super().to_dict()
+        d.update({"portas": self.portas, "motor": self.motor, "opcionais": self.opcionais})
+        return d
+
 
 class Moto(Veiculo):
-    cilindrada = 0
-    tipo = ""
-    
-    def __init__(obj):
-        obj.codigo = random.randint(1000, 9999)
+    """Herda de Veiculo e adiciona atributos exclusivos de motos."""
 
-    def __str__(obj):
-        info = ""
-        info += ("- Veículo: " + obj.codigo + " - moto \n")
-        info += ("\t- Marca: " + obj.marca + "\n")
-        info += ("\t- Modelo: " + obj.modelo + "\n")
-        info += ("\t- Ano: " + obj.ano + "\n")
-        info += ("\t- Cor: " + obj.cor + "\n")
-        info += ("\t- Quilometragem: " + obj.quilo + "\n")
-        info += ("\t- Valor: " + obj.valor + "\n")
-        info += ("\t- Cilindradas: " + obj.cilindrada + "\n")
-        info += ("\t- Tipo: " + obj.tipo + "\n")
-        return info
+    def __init__(self):
+        super().__init__()
+        self.cilindrada   = ""
+        self.tipo_moto    = ""
+
+    def tipo(self):
+        return "Moto"
+
+    def detalhes(self):
+        return (
+            f"  Cilindrada  : {self.cilindrada}\n"
+            f"  Tipo        : {self.tipo_moto}"
+        )
+
+    def to_dict(self):
+        d = super().to_dict()
+        d.update({"cilindrada": self.cilindrada, "tipo_moto": self.tipo_moto})
+        return d
+
+
+class Caminhao(Veiculo):
+    """Herda de Veiculo e adiciona atributos exclusivos de caminhões."""
+
+    def __init__(self):
+        super().__init__()
+        self.eixos        = ""
+        self.tipo_caminhao = ""
+
+    def tipo(self):
+        return "Caminhão"
+
+    def detalhes(self):
+        return (
+            f"  Eixos       : {self.eixos}\n"
+            f"  Tipo        : {self.tipo_caminhao}"
+        )
+
+    def to_dict(self):
+        d = super().to_dict()
+        d.update({"eixos": self.eixos, "tipo_caminhao": self.tipo_caminhao})
+        return d
+
 
 class Vendedor:
-    nome = ""
-    cod = ""
+    def __init__(self, nome):
+        self.nome = nome
+
 
 class Cliente:
-    nome = ""
-    idade = 0
-    doc = 0
+    def __init__(self, nome, doc):
+        self.nome = nome
+        self.doc  = doc
+
 
 class Venda:
-    data = ""
-    veiculo = None
-    cliente = None
-    vendedor = None
+    def __init__(self, veiculo, cliente, vendedor):
+        self.veiculo  = veiculo
+        self.cliente  = cliente
+        self.vendedor = vendedor
+        self.data     = datetime.now().strftime("%d/%m/%Y %H:%M")
+
+    def resumo(self):
+        return (
+            f"  Data        : {self.data}\n"
+            f"  Veículo     : {self.veiculo.marca} {self.veiculo.modelo} "
+            f"(#{self.veiculo.codigo})\n"
+            f"  Valor       : {self.veiculo.valor}\n"
+            f"  Cliente     : {self.cliente.nome} — Doc: {self.cliente.doc}\n"
+            f"  Vendedor    : {self.vendedor.nome}"
+        )
+
+
+def cadastrar_veiculo():
+    
+    limpar_tela()
+    separador("Cadastro de Veículo")
+
+    # 1. Escolher o tipo de veículo
+    tipo_escolhido = selecionar("Tipo de veículo", ["Carro", "Moto", "Caminhão"])
+
+    # 2. Criar o objeto correto dependendo do tipo escolhido
+    if tipo_escolhido == "Carro":
+        veic = Carro()
+        marcas = MARCAS_CARRO
+    elif tipo_escolhido == "Moto":
+        veic = Moto()
+        marcas = MARCAS_MOTO
+    else:
+        veic = Caminhao()
+        marcas = MARCAS_CAMINHAO
+    # 3. Preencher os atributos comuns (todos os veículos têm esses)
+    veic.marca       = selecionar("Marca", marcas)
+    veic.modelo      = input("\n  Modelo (ex: Onix, CG 160): ").strip()
+    veic.ano         = selecionar("Ano", ANOS)
+    veic.cor         = selecionar("Cor", CORES)
+    veic.quilometros = digitar_quilometragem()
+    veic.valor       = digitar_valor()
+
+    if isinstance(veic, Carro):
+        veic.portas    = selecionar("Número de portas", ["2 portas", "4 portas"])
+        veic.motor     = selecionar("Motor", MOTORES)
+        print("\n  Selecione os OPCIONAIS disponíveis no veículo.")
+        print("  (Digite os números separados por vírgula, ou Enter para nenhum)")
+        veic.opcionais = selecionar("Opcionais", OPCIONAIS_CARRO, permite_multiplo=True)
+
+    elif isinstance(veic, Moto):
+        veic.cilindrada = selecionar("Cilindrada", [
+            "50cc", "125cc", "150cc", "160cc", "200cc",
+            "250cc", "300cc", "400cc", "600cc", "1000cc ou mais"
+        ])
+        veic.tipo_moto = selecionar("Tipo de moto", TIPOS_MOTO)
+
+    elif isinstance(veic, Caminhao):
+        veic.eixos = selecionar("Número de eixos", [
+            "2 eixos", "3 eixos", "4 eixos", "5 eixos", "6 eixos"
+        ])
+        veic.tipo_caminhao = selecionar("Tipo de caminhão", TIPOS_CAMINHAO)
+
+    estoque.append(veic)
+
+    limpar_tela()
+    separador("Veículo Cadastrado com Sucesso!")
+    print(veic.resumo())
+    separador()
+    print(veic.detalhes())
+    separador()
+    print(f"  ✅  Código gerado: #{veic.codigo}")
+    pausar()
+
+
+def consultar_estoque():
+    
+    limpar_tela()
+    separador("Estoque de Veículos")
+
+    disponiveis = [v for v in estoque if not v.vendido]
+    vendidos    = [v for v in estoque if v.vendido]
+
+    if not estoque:
+        print("  Nenhum veículo cadastrado no sistema.")
+        pausar()
+        return
+
+    print(f"  Total cadastrado : {len(estoque)} veículo(s)")
+    print(f"  Disponíveis      : {len(disponiveis)}")
+    print(f"  Vendidos         : {len(vendidos)}")
+
+    for v in estoque:
+        separador(f"#{v.codigo} — {v.marca} {v.modelo}")
+        print(v.resumo())
+        print()
+        print(v.detalhes())
+
+    pausar()
+
+
+def registrar_venda():
+    
+    limpar_tela()
+    separador("Registrar Venda")
+
+    disponiveis = [v for v in estoque if not v.vendido]
+
+    if not disponiveis:
+        print("  Nenhum veículo disponível para venda no momento.")
+        pausar()
+        return
+
+    opcoes_veiculos = [
+        f"{v.marca} {v.modelo} ({v.ano}) — {v.valor} — #{v.codigo}"
+        for v in disponiveis
+    ]
+
+    escolha_str = selecionar("Veículos disponíveis", opcoes_veiculos)
+
+    idx = opcoes_veiculos.index(escolha_str)
+    veic_escolhido = disponiveis[idx]
+
+    separador("Dados do Cliente")
+    nome_cliente = input("  Nome do cliente : ").strip()
+    doc_cliente  = input("  Documento (CPF) : ").strip()
+
+    nome_vendedor = selecionar("Vendedor responsável", VENDEDORES)
+
+    cliente  = Cliente(nome_cliente, doc_cliente)
+    vendedor = Vendedor(nome_vendedor)
+    venda    = Venda(veic_escolhido, cliente, vendedor)
+
+    veic_escolhido.vendido = True  # marca como vendido no estoque
+    vendas.append(venda)
+
+    limpar_tela()
+    separador("Venda Registrada com Sucesso!")
+    print(venda.resumo())
+    pausar()
+
+
+def consultar_vendas():
+    """Exibe o histórico de todas as vendas realizadas."""
+    limpar_tela()
+    separador("Histórico de Vendas")
+
+    if not vendas:
+        print("  Nenhuma venda registrada ainda.")
+        pausar()
+        return
+
+    print(f"  Total de vendas: {len(vendas)}")
+    for i, v in enumerate(vendas, start=1):
+        separador(f"Venda #{i}")
+        print(v.resumo())
+
+    pausar()
+
 
 def main():
-    print("Selecione umas das opções:")
-    print("1 - Cadastro de veículos")
-    print("2 - Consulta de estoque")
-    print("3 - Consulta de venda")
-    print("4 - Venda")
-    opt = input("Opção: ")
-
-    match opt:
-        case "1":
-            cadastrarVeiculo()
-        case "2":
-            consultarEstoque()
-        case "3":
-            consultarVenda()
-        case "4":
-            vender()
-
-def cadastrarVeiculo():
-    print("Tipos de veículo: ")
-    print("1 - Carro")
-    print("2 - Caminhão")
-    print("3 - Moto")
-    tipo = input("Tipo: ")
-
-    match tipo:
-        case "1":
-            veic = Carro()
-        case "2":
-            veic = Caminhao()
-        case "3":
-            veic = Moto()
-
-    veic.modelo = input("Modelo: ")
-    veic.marca = input("Marca: ")
-    veic.ano = input("Ano: ")
-    veic.cor = input("Cor: ")
-    veic.quilo = input("Quilometragem: ")
-    veic.valor = input("Valor: ")
-    if tipo == "1":
-        veic.opcionais = input("Opcionais: ")
-        veic.portas = input("Portas: ")
-        veic.arCondicionado = input("Tem ar-condicionado (sim ou não): ")
-        veic.motor = input("Motor: ")
-    elif tipo == "2":
-        veic.eixos = input("Eixos: ")
-        veic.tipo = input("Tipo: ")
-    else:
-        veic.cilindrada = input("Cilindradas: ")
-        veic.tipo = input("Tipo: ")
-
     
+    while True:
+        limpar_tela()
+        separador("Sistema de Revenda de Veículos")
 
-    print("Veículo cadastrado com sucesso!")
-    print(f"Código do veículo: {veic.codigo}")
-    
-def cadastrarVendedor():
-    vend = Vendedor()
-    vend.nome = input("Nome: ")
-    vend.cod = input("Código: ")
+        disponiveis = len([v for v in estoque if not v.vendido])
+        print(f"  Estoque disponível : {disponiveis} veículo(s)")
+        print(f"  Vendas realizadas  : {len(vendas)}")
+        separador()
 
-def cadastrarCliente():
-    cliente = Cliente()
-    cliente.nome = input("Nome: ")
-    cliente.idade = input("Idade: ")
-    cliente.doc = input("Documento: ")
+        print("  1. Cadastrar veículo")
+        print("  2. Consultar estoque")
+        print("  3. Registrar venda")
+        print("  4. Histórico de vendas")
+        print("  0. Sair")
+        separador()
 
-def consultarEstoque():
-    with open(ARQ) as estoque:
-        veic = None
-        for linha in estoque:
-            if linha == "\n":
-                continue
+        opcao = input("  Escolha uma opção: ").strip()
 
-            linha = linha.split(" ")
-
-            if linha[0] == "1":
-                veic = Carro()
-                veic.opcionais = linha[8]
-                veic.portas = linha[9]
-                veic.arCondicionado = linha[10]
-                veic.motor = linha[11]
-            elif linha[0] == "2":
-                veic = Caminhao()
-                veic.eixos = linha[8]
-                veic.tipo = linha[9]
-            else:
-                veic = Moto()
-                veic.cilindrada = linha[8]
-                veic.tipo = linha[9]
-
-            veic.codigo = linha[1]
-            veic.modelo = linha[2]
-            veic.marca = linha[3]
-            veic.ano = linha[4]
-            veic.cor = linha[5]
-            veic.quilo = linha[6]
-            veic.valor = linha[7]
-
-            print(veic)
+        match opcao:
+            case "1":
+                cadastrar_veiculo()
+            case "2":
+                consultar_estoque()
+            case "3":
+                registrar_venda()
+            case "4":
+                consultar_vendas()
+            case "0":
+                limpar_tela()
+                print("  Até logo!")
+                break
+            case _:
+                print("  ⚠  Opção inválida. Tente novamente.")
+                pausar()
 
 
-def consultarVenda():
-    pass
-
-def vender():
-    pass
-
-main()
+if __name__ == "__main__":
+    main()
