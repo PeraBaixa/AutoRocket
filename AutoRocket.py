@@ -309,6 +309,22 @@ with open("vendas.txt") as hist:
         vendas.append(venda)
 
 
+def atualiza_banco(est=True):
+    if est:
+        novEst = ""
+        for veic in estoque:
+            novEst += (json.dumps(veic.to_dict()) + "\n")
+        
+        with open("estoque.txt", "w") as esto:
+            esto.write(novEst)
+    else:
+        novVen = ""
+        for ven in vendas:
+            novVen += (json.dumps(ven.to_dict()) + "\n")
+        
+        with open("vendas.txt", "w") as v:
+            v.write(novVen)
+
 def limpar_tela():
     """Limpa o terminal para deixar a interface mais limpa."""
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -437,6 +453,7 @@ def alterar_deletar_veiculo():
     separador(f"Veículo #{veic.codigo} atualizado")
     print(veic.resumo())
     pausar()
+    atualiza_banco()
 
 def cadastrar_veiculo():
     
