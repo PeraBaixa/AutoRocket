@@ -4,7 +4,6 @@ import os
 import json
 from datetime import datetime
 
-
 MARCAS_CARRO = [
     "Chevrolet", "Fiat", "Volkswagen", "Ford", "Toyota",
     "Honda", "Hyundai", "Renault", "Jeep", "Nissan",
@@ -28,6 +27,7 @@ CORES = [
 
 ANOS = [str(ano) for ano in range(2025, 1994, -1)]
 
+
 def digitar_quilometragem():
     while True:
         separador("Quilometragem")
@@ -43,7 +43,6 @@ def digitar_quilometragem():
                 return f"{km:,.0f} km".replace(",", ".")
         except ValueError:
             print("  ⚠  Digite apenas números inteiros. Ex: 45320")
-
 
 def digitar_valor():
     while True:
@@ -62,7 +61,6 @@ def digitar_valor():
                 return f"R$ {valor_fmt}"
         except ValueError:
             print("  ⚠  Valor inválido. Use apenas números. Ex: 45000 ou 45000.50")
-
 
 OPCIONAIS_CARRO = [
     "Ar-condicionado",
@@ -89,74 +87,13 @@ TIPOS_MOTO = ["Naked", "Sport", "Scooter", "Trail", "Custom", "Touring", "Off-ro
 
 TIPOS_CAMINHAO = ["Leve", "Médio", "Semipesado", "Pesado", "Extrapesado"]
 
-VENDEDORES = ["Everton Tarelli", "Marco Antonio", "Erick Perauta"]
+VENDEDORES = ["Carlos Andrade", "Fernanda Lima", "Ricardo Souza", "Patrícia Mendes"]
 
-
-estoque = []
-vendas  = []
-
-
-def limpar_tela():
-    """Limpa o terminal para deixar a interface mais limpa."""
-    os.system('cls' if os.name == 'nt' else 'clear')
-
-
-def separador(titulo=""):
-    
-    print()
-    if titulo:
-        print(f"{'─' * 10} {titulo.upper()} {'─' * 10}")
-    else:
-        print("─" * 40)
-
-
-def pausar():
-
-    print()
-    input("  Pressione Enter para continuar...")
-
-
-def selecionar(titulo, opcoes, permite_multiplo=False):
-
-    while True:
-        separador(titulo)
-        for i, opcao in enumerate(opcoes, start=1):
-            print(f"  {i:2}. {opcao}")
-        print()
-
-        if permite_multiplo:
-            entrada = input("  Digite os números separados por vírgula (ex: 1,3,5): ").strip()
-            if not entrada:
-                return []  # nenhum opcional selecionado é válido
-            try:
-                indices = [int(x.strip()) for x in entrada.split(",")]
-                # Verifica se todos os índices são válidos
-                if all(1 <= idx <= len(opcoes) for idx in indices):
-                    return [opcoes[idx - 1] for idx in indices]
-                else:
-                    print("  ⚠  Número inválido. Tente novamente.")
-            except ValueError:
-                print("  ⚠  Digite apenas números separados por vírgula.")
-        else:
-            entrada = input("  Escolha uma opção: ").strip()
-            try:
-                idx = int(entrada)
-                if 1 <= idx <= len(opcoes):
-                    return opcoes[idx - 1]
-                else:
-                    print(f"  ⚠  Digite um número entre 1 e {len(opcoes)}.")
-            except ValueError:
-                print("  ⚠  Digite apenas o número da opção.")
-
-
-def gerar_codigo():
-    """Gera um código numérico aleatório de 4 dígitos para o veículo."""
-    return random.randint(1000, 9999)
-
+#CLASSES
 class Veiculo(ABC):
 
     def __init__(self):
-        self.codigo      = gerar_codigo()
+        self.codigo      = random.randint(1000, 9999)
         self.modelo      = ""
         self.marca       = ""
         self.ano         = ""
@@ -204,6 +141,16 @@ class Veiculo(ABC):
             "vendido":     self.vendido,
         }
 
+    def iniciar(self, atrs):
+        """Recebe os valores em um dict para iniciar os seus atributos"""
+        self.codigo = atrs["codigo"]
+        self.modelo = atrs["modelo"]
+        self.marca = atrs["marca"]
+        self.ano = atrs["ano"]
+        self.cor = atrs["cor"]
+        self.quilometros = atrs["quilometros"]
+        self.valor = atrs["valor"]
+        self.vendido = atrs["vendido"]
 
 class Carro(Veiculo):
     """Herda de Veiculo e adiciona atributos exclusivos de carros."""
@@ -230,6 +177,11 @@ class Carro(Veiculo):
         d.update({"portas": self.portas, "motor": self.motor, "opcionais": self.opcionais})
         return d
 
+    def iniciar(self, atrs):
+        super().iniciar(atrs)
+        self.portas = atrs["portas"]
+        self.motor = atrs["motor"]
+        self.opcionais = atrs["opcionais"]
 
 class Moto(Veiculo):
     """Herda de Veiculo e adiciona atributos exclusivos de motos."""
@@ -253,6 +205,10 @@ class Moto(Veiculo):
         d.update({"cilindrada": self.cilindrada, "tipo_moto": self.tipo_moto})
         return d
 
+    def iniciar(self, atrs):
+        super().iniciar(atrs)
+        self.cilindrada = atrs["cilindrada"]
+        self.tipo_moto = atrs["tipo_moto"]
 
 class Caminhao(Veiculo):
     """Herda de Veiculo e adiciona atributos exclusivos de caminhões."""
@@ -276,20 +232,22 @@ class Caminhao(Veiculo):
         d.update({"eixos": self.eixos, "tipo_caminhao": self.tipo_caminhao})
         return d
 
+    def iniciar(self, atrs):
+        super().iniciar(atrs)
+        self.eixos = atrs["eixos"]
+        self.tipo_caminhao = atrs["tipo_caminhao"]
 
 class Vendedor:
     def __init__(self, nome):
         self.nome = nome
-
 
 class Cliente:
     def __init__(self, nome, doc):
         self.nome = nome
         self.doc  = doc
 
-
 class Venda:
-    def __init__(self, veiculo, cliente, vendedor):
+    def __init__(self, veiculo=None, cliente=None, vendedor=None):
         self.veiculo  = veiculo
         self.cliente  = cliente
         self.vendedor = vendedor
@@ -305,6 +263,180 @@ class Venda:
             f"  Vendedor    : {self.vendedor.nome}"
         )
 
+    def to_dict(self):
+        return {
+            "veiculo":  self.veiculo.codigo,
+            "cliente_nome":  self.cliente.nome,
+            "cliente_doc": self.cliente.doc,
+            "vendedor": self.vendedor.nome,
+            "data":     self.data
+        }
+
+    def iniciar(self, atrs):
+        for v in estoque:
+            if v.codigo == atrs["veiculo"]:
+                self.veiculo = v
+                break
+        
+        self.cliente = Cliente(atrs["cliente_nome"], atrs["cliente_doc"])
+        self.vendedor = Vendedor(atrs["vendedor"])
+        self.data = atrs["data"]
+
+#Variáveis de banco
+estoque = []
+with open("estoque.txt") as est:
+    for linha in est:
+        if linha == "": continue
+        
+        linha = json.loads(linha)
+        veic = None
+
+        if linha["tipo_classe"] == "Carro": veic = Carro()
+        elif linha["tipo_classe"] == "Moto": veic = Moto()
+        else: veic = Caminhao()
+        veic.iniciar(linha)
+
+        estoque.append(veic)
+
+vendas  = []
+with open("vendas.txt") as hist:
+    for linha in hist:
+        if linha == "": continue
+
+        linha = json.loads(linha)
+        venda = Venda()
+        venda.iniciar(linha)
+        vendas.append(venda)
+
+
+def limpar_tela():
+    """Limpa o terminal para deixar a interface mais limpa."""
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+def separador(titulo=""):
+    """Imprime uma linha separadora com título opcional."""
+    print()
+    if titulo:
+        print(f"{'─' * 10} {titulo.upper()} {'─' * 10}")
+    else:
+        print("─" * 40)
+
+def pausar():
+    """Pausa a execução até o usuário pressionar Enter."""
+    print()
+    input("  Pressione Enter para continuar...")
+
+def selecionar(titulo, opcoes, permite_multiplo=False):
+
+    while True:
+        separador(titulo)
+        for i, opcao in enumerate(opcoes, start=1):
+            print(f"  {i:2}. {opcao}")
+        print()
+
+        if permite_multiplo:
+            entrada = input("  Digite os números separados por vírgula (ex: 1,3,5): ").strip()
+            if not entrada:
+                return []  # nenhum opcional selecionado é válido
+            try:
+                indices = [int(x.strip()) for x in entrada.split(",")]
+                # Verifica se todos os índices são válidos
+                if all(1 <= idx <= len(opcoes) for idx in indices):
+                    return [opcoes[idx - 1] for idx in indices]
+                else:
+                    print("  ⚠  Número inválido. Tente novamente.")
+            except ValueError:
+                print("  ⚠  Digite apenas números separados por vírgula.")
+        else:
+            entrada = input("  Escolha uma opção: ").strip()
+            try:
+                idx = int(entrada)
+                if 1 <= idx <= len(opcoes):
+                    return opcoes[idx - 1]
+                else:
+                    print(f"  ⚠  Digite um número entre 1 e {len(opcoes)}.")
+            except ValueError:
+                print("  ⚠  Digite apenas o número da opção.")
+
+def gerar_codigo():
+    """Gera um código numérico aleatório de 4 dígitos para o veículo."""
+    return random.randint(1000, 9999)
+
+#Funções do menu:
+def alterar_deletar_veiculo():
+
+    limpar_tela()
+    separador("Alterar / Deletar Veículo")
+
+    disponiveis = [v for v in estoque if not v.vendido]
+
+    if not disponiveis:
+        print("  Nenhum veículo disponível no estoque.")
+        pausar()
+        return
+
+    opcoes = [
+        f"#{v.codigo} — {v.marca} {v.modelo} ({v.ano}) — {v.valor}"
+        for v in disponiveis
+    ]
+
+    escolha_str = selecionar("Selecione o veículo", opcoes)
+    idx = opcoes.index(escolha_str)
+    veic = disponiveis[idx]
+
+    limpar_tela()
+    separador(f"Veículo #{veic.codigo}")
+    print(veic.resumo())
+    print()
+    print(veic.detalhes())
+
+    acao = selecionar("O que deseja fazer?", ["Alterar dados", "Deletar veículo"])
+
+    # DELETAR
+    if acao == "Deletar veículo":
+        separador("Confirmar exclusão")
+        print("  Tem certeza que deseja deletar o veículo abaixo?")
+        print(f"  {veic.marca} {veic.modelo} (#{veic.codigo})")
+        print()
+        confirmacao = input("  Digite SIM para confirmar: ").strip().upper()
+        if confirmacao == "SIM":
+            estoque.remove(veic)
+            print()
+            print("  ✅  Veículo removido do estoque com sucesso!")
+        else:
+            print()
+            print("  ❌  Operação cancelada.")
+        pausar()
+        return
+
+    # ALTERAR
+    separador("O que deseja alterar?")
+    campos = ["Modelo", "Cor", "Quilometragem", "Valor", "Cancelar"]
+    campo = selecionar("Campo para alterar", campos)
+
+    if campo == "Cancelar":
+        return
+
+    if campo == "Modelo":
+        print()
+        novo = input("  Novo modelo: ").strip()
+        if novo:
+            veic.modelo = novo
+
+    elif campo == "Cor":
+        veic.cor = selecionar("Nova cor", CORES)
+
+    elif campo == "Quilometragem":
+        veic.quilometros = digitar_quilometragem()
+
+    elif campo == "Valor":
+        veic.valor = digitar_valor()
+
+    print()
+    print("  ✅  Dado alterado com sucesso!")
+    separador(f"Veículo #{veic.codigo} atualizado")
+    print(veic.resumo())
+    pausar()
 
 def cadastrar_veiculo():
     
@@ -361,8 +493,8 @@ def cadastrar_veiculo():
     print(veic.detalhes())
     separador()
     print(f"  ✅  Código gerado: #{veic.codigo}")
+    print(json.dumps(veic.to_dict()))
     pausar()
-
 
 def consultar_estoque():
     
@@ -388,7 +520,6 @@ def consultar_estoque():
         print(v.detalhes())
 
     pausar()
-
 
 def registrar_venda():
     
@@ -424,12 +555,12 @@ def registrar_venda():
 
     veic_escolhido.vendido = True  # marca como vendido no estoque
     vendas.append(venda)
+    print(json.dumps(venda.to_dict()))
 
     limpar_tela()
     separador("Venda Registrada com Sucesso!")
     print(venda.resumo())
     pausar()
-
 
 def consultar_vendas():
     """Exibe o histórico de todas as vendas realizadas."""
@@ -446,81 +577,6 @@ def consultar_vendas():
         separador(f"Venda #{i}")
         print(v.resumo())
 
-    pausar()
-
-def alterar_deletar_veiculo():
-
-    limpar_tela()
-    separador("Alterar / Deletar Veículo")
-
-    disponiveis = [v for v in estoque if not v.vendido]
-
-    if not disponiveis:
-        print("  Nenhum veículo disponível no estoque.")
-        pausar()
-        return
-
-    opcoes = [
-        f"#{v.codigo} — {v.marca} {v.modelo} ({v.ano}) — {v.valor}"
-        for v in disponiveis
-    ]
-
-    escolha_str = selecionar("Selecione o veículo", opcoes)
-    idx = opcoes.index(escolha_str)
-    veic = disponiveis[idx]
-
-    limpar_tela()
-    separador(f"Veículo #{veic.codigo}")
-    print(veic.resumo())
-    print()
-    print(veic.detalhes())
-
-    acao = selecionar("O que deseja fazer?", ["Alterar dados", "Deletar veículo"])
-
-    # DELETAR
-    if acao == "Deletar veículo":
-        separador("Confirmar exclusão")
-        print(f"  Tem certeza que deseja deletar o veículo abaixo?")
-        print(f"  {veic.marca} {veic.modelo} (#{veic.codigo})")
-        print()
-        confirmacao = input("  Digite SIM para confirmar: ").strip().upper()
-        if confirmacao == "SIM":
-            estoque.remove(veic)
-            print()
-            print("  ✅  Veículo removido do estoque com sucesso!")
-        else:
-            print()
-            print("  ❌  Operação cancelada.")
-        pausar()
-        return
-
-    # ALTERAR
-    separador("O que deseja alterar?")
-    campos = ["Modelo", "Cor", "Quilometragem", "Valor", "Cancelar"]
-    campo = selecionar("Campo para alterar", campos)
-
-    if campo == "Cancelar":
-        return
-
-    if campo == "Modelo":
-        print()
-        novo = input("  Novo modelo: ").strip()
-        if novo:
-            veic.modelo = novo
-
-    elif campo == "Cor":
-        veic.cor = selecionar("Nova cor", CORES)
-
-    elif campo == "Quilometragem":
-        veic.quilometros = digitar_quilometragem()
-
-    elif campo == "Valor":
-        veic.valor = digitar_valor()
-
-    print()
-    print("  ✅  Dado alterado com sucesso!")
-    separador(f"Veículo #{veic.codigo} atualizado")
-    print(veic.resumo())
     pausar()
 
 def main():
@@ -562,7 +618,6 @@ def main():
             case _:
                 print("  ⚠  Opção inválida. Tente novamente.")
                 pausar()
-
 
 if __name__ == "__main__":
     main()
