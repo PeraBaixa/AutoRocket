@@ -1,1 +1,1 @@
-1 8365 picape ford 2025 vermelho 0 250000 sim 4 sim 4.2
+{"codigo": 8616, "tipo_classe": "Carro", "modelo": "Palio", "marca": "Chevrolet", "ano": "2001", "cor": "Branca", "quilometros": "800 km", "valor": "R$ 5.000,00", "vendido": false, "portas": "4 portas", "motor": "2.0", "opcionais": ["Ar-condicionado", "Vidros el\u00e9tricos"]}
