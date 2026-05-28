@@ -89,7 +89,7 @@ TIPOS_MOTO = ["Naked", "Sport", "Scooter", "Trail", "Custom", "Touring", "Off-ro
 
 TIPOS_CAMINHAO = ["Leve", "Médio", "Semipesado", "Pesado", "Extrapesado"]
 
-VENDEDORES = ["Carlos Andrade", "Fernanda Lima", "Ricardo Souza", "Patrícia Mendes"]
+VENDEDORES = ["Everton Tarelli", "Marco Antonio", "Erick Perauta"]
 
 
 estoque = []
@@ -102,7 +102,7 @@ def limpar_tela():
 
 
 def separador(titulo=""):
-    """Imprime uma linha separadora com título opcional."""
+    
     print()
     if titulo:
         print(f"{'─' * 10} {titulo.upper()} {'─' * 10}")
@@ -111,7 +111,7 @@ def separador(titulo=""):
 
 
 def pausar():
-    """Pausa a execução até o usuário pressionar Enter."""
+
     print()
     input("  Pressione Enter para continuar...")
 
@@ -448,6 +448,80 @@ def consultar_vendas():
 
     pausar()
 
+def alterar_deletar_veiculo():
+
+    limpar_tela()
+    separador("Alterar / Deletar Veículo")
+
+    disponiveis = [v for v in estoque if not v.vendido]
+
+    if not disponiveis:
+        print("  Nenhum veículo disponível no estoque.")
+        pausar()
+        return
+
+    opcoes = [
+        f"#{v.codigo} — {v.marca} {v.modelo} ({v.ano}) — {v.valor}"
+        for v in disponiveis
+    ]
+
+    escolha_str = selecionar("Selecione o veículo", opcoes)
+    idx = opcoes.index(escolha_str)
+    veic = disponiveis[idx]
+
+    limpar_tela()
+    separador(f"Veículo #{veic.codigo}")
+    print(veic.resumo())
+    print()
+    print(veic.detalhes())
+
+    acao = selecionar("O que deseja fazer?", ["Alterar dados", "Deletar veículo"])
+
+    # DELETAR
+    if acao == "Deletar veículo":
+        separador("Confirmar exclusão")
+        print(f"  Tem certeza que deseja deletar o veículo abaixo?")
+        print(f"  {veic.marca} {veic.modelo} (#{veic.codigo})")
+        print()
+        confirmacao = input("  Digite SIM para confirmar: ").strip().upper()
+        if confirmacao == "SIM":
+            estoque.remove(veic)
+            print()
+            print("  ✅  Veículo removido do estoque com sucesso!")
+        else:
+            print()
+            print("  ❌  Operação cancelada.")
+        pausar()
+        return
+
+    # ALTERAR
+    separador("O que deseja alterar?")
+    campos = ["Modelo", "Cor", "Quilometragem", "Valor", "Cancelar"]
+    campo = selecionar("Campo para alterar", campos)
+
+    if campo == "Cancelar":
+        return
+
+    if campo == "Modelo":
+        print()
+        novo = input("  Novo modelo: ").strip()
+        if novo:
+            veic.modelo = novo
+
+    elif campo == "Cor":
+        veic.cor = selecionar("Nova cor", CORES)
+
+    elif campo == "Quilometragem":
+        veic.quilometros = digitar_quilometragem()
+
+    elif campo == "Valor":
+        veic.valor = digitar_valor()
+
+    print()
+    print("  ✅  Dado alterado com sucesso!")
+    separador(f"Veículo #{veic.codigo} atualizado")
+    print(veic.resumo())
+    pausar()
 
 def main():
     
@@ -464,6 +538,7 @@ def main():
         print("  2. Consultar estoque")
         print("  3. Registrar venda")
         print("  4. Histórico de vendas")
+        print("  5. Alterar / Deletar veículo")
         print("  0. Sair")
         separador()
 
@@ -478,6 +553,8 @@ def main():
                 registrar_venda()
             case "4":
                 consultar_vendas()
+            case "5":
+                alterar_deletar_veiculo()
             case "0":
                 limpar_tela()
                 print("  Até logo!")
