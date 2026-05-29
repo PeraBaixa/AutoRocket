@@ -502,6 +502,8 @@ def cadastrar_veiculo():
         veic.tipo_caminhao = selecionar("Tipo de caminhão", TIPOS_CAMINHAO)
 
     estoque.append(veic)
+    with open("estoque.txt","a") as est:
+        est.write(json.dumps(veic.to_dict()))
 
     limpar_tela()
     separador("Veículo Cadastrado com Sucesso!")
@@ -572,6 +574,8 @@ def registrar_venda():
 
     veic_escolhido.vendido = True  # marca como vendido no estoque
     vendas.append(venda)
+    with open("vendas.txt","a") as v:
+        v.write(json.dumps(venda.to_dict()))
     print(json.dumps(venda.to_dict()))
 
     limpar_tela()
